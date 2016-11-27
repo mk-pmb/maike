@@ -32,7 +32,7 @@ Target& Target_FactoryDelegatorDefault::dependencyResolve(DependencyGraph& graph
 		{return *ptr_ret;}
 
 //	It is not. Is it an existing file?
-	if(FileUtils::exists(name))
+	if(r_fileutils.exists(name))
 		{
 		Handle<TargetPlaceholder> target(
 			TargetPlaceholder::create(name,name,rootGet(),idGet()));
@@ -56,8 +56,9 @@ Target& Target_FactoryDelegatorDefault::dependencyResolve(DependencyGraph& graph
 		,{target_from,name}));
 	}
 
-Target_FactoryDelegatorDefault::Target_FactoryDelegatorDefault(const ExpressionEvaluator& eval)
-	:r_eval(eval)
+Target_FactoryDelegatorDefault::Target_FactoryDelegatorDefault(const ExpressionEvaluator& eval
+	,const FileUtils& fileutils)
+	:r_eval(eval),r_fileutils(fileutils)
 	{
 	}
 

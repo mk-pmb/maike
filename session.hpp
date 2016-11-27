@@ -15,6 +15,7 @@
 #include "dependencygraphdefault.hpp"
 #include "target_hook_registry.hpp"
 #include "target_factorydelegatordefault.hpp"
+#include "fileutilsdefault.hpp"
 #include <set>
 #include <string>
 
@@ -64,6 +65,7 @@ namespace Maike
 			std::set<std::string> m_source_files;
 			std::string m_target_dir_full;
 			mutable SpiderDefault m_spider;
+			mutable FileUtilsDefault m_fileutils;
 			mutable Target_FactoryDelegatorDefault m_delegator;
 			mutable DependencyGraphDefault m_graph;
 			mutable unsigned int m_dirty_flags;

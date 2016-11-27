@@ -187,7 +187,8 @@ static std::vector<TargetCxxCompiler::FileInfo> depstringCreateAr(
 	}
 
 static void includeBuild(Twins<const Dependency*> dependency_list
-	,const char* source_name,const char* name,const char* target_dir)
+	,const char* source_name,const char* name,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	while(dependency_list.first!=dependency_list.second)
 		{
@@ -198,18 +199,19 @@ static void includeBuild(Twins<const Dependency*> dependency_list
 				{
 				auto src=t->sourceNameGet();
 				auto dest=dircat(target_dir,t->nameGet());
-				if(FileUtils::newer(src,dest.c_str()))
-					{FileUtils::copyFilter(src,dest.c_str(),"^[[:space:]]*//@");}
+				if(!fileutils.checksumCheck(src))
+					{fileutils.copyFilter(src,dest.c_str(),"^[[:space:]]*//@");}
 				}
 			}
 		++dependency_list.first;
 		}
-	FileUtils::copyFilter(source_name,name,"^[[:space:]]*//@");
+	fileutils.copyFilter(source_name,name,"^[[:space:]]*//@");
 	}
 
 void TargetCxx::compileImpl(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	auto name_full=dircat(target_dir,nameGet());
 
@@ -219,7 +221,7 @@ void TargetCxx::compileImpl(Twins<const Dependency*> dependency_list
 			r_compiler.compileObject(sourceNameGet(),inDirGet(),name_full.c_str(),m_options_extra);
 			break;
 		case Type::INCLUDE_LIB:
-			includeBuild(dependency_list,sourceNameGet(),name_full.c_str(),target_dir);
+			includeBuild(dependency_list,sourceNameGet(),name_full.c_str(),target_dir,fileutils);
 			break;
 		case Type::APPLICATION:
 			{
@@ -272,7 +274,8 @@ void TargetCxx::compileImpl(Twins<const Dependency*> dependency_list
 static bool objectUpToDate(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
 	,const char* target_name_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	while(dependency_list.first!=dependency_list.second)
 		{
@@ -280,11 +283,11 @@ static bool objectUpToDate(Twins<const Dependency*> dependency_list
 		switch(dep->relationGet())
 			{
 			case Dependency::Relation::GENERATED:
-				if( FileUtils::newer(dircat(target_dir,dep->nameGet()).c_str(),target_name_full))
+				if( !fileutils.checksumCheck(dircat(target_dir,dep->nameGet()).c_str() ))
 					{return 0;}
 				break;
 			default:
-				if(FileUtils::newer(dep->nameGet(),target_name_full))
+				if( !fileutils.checksumCheck(dep->nameGet()) )
 					{return 0;}
 			}
 		++dependency_list.first;
@@ -295,7 +298,8 @@ static bool objectUpToDate(Twins<const Dependency*> dependency_list
 static bool includeLibUpToDate(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
 	,const char* target_name_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	while(dependency_list.first!=dependency_list.second)
 		{
@@ -304,7 +308,7 @@ static bool includeLibUpToDate(Twins<const Dependency*> dependency_list
 			{
 			if(t->typeGet()==TargetCxx::Type::INCLUDE)
 				{
-				if(FileUtils::newer(t->sourceNameGet(),dircat(target_dir,t->nameGet()).c_str()))
+				if( !fileutils.checksumCheck(t->sourceNameGet()) )
 					{return 0;}
 				}
 			}
@@ -316,7 +320,8 @@ static bool includeLibUpToDate(Twins<const Dependency*> dependency_list
 static bool applicationUpToDate(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
 	,const char* target_name_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	while(dependency_list.first!=dependency_list.second)
 		{
@@ -324,14 +329,14 @@ static bool applicationUpToDate(Twins<const Dependency*> dependency_list
 		switch(dep->relationGet())
 			{
 			case Dependency::Relation::GENERATED:
-				if( FileUtils::newer(dircat(target_dir,dep->nameGet()).c_str(),target_name_full ))
+				if( !fileutils.checksumCheck(dircat(target_dir,dep->nameGet()).c_str()))
 					{return 0;}
 				break;
 			case Dependency::Relation::EXTERNAL:
 				break;
 				
 			default:
-				if(FileUtils::newer(dep->nameGet(),target_name_full))
+				if( !fileutils.checksumCheck(dep->nameGet()) )
 					{return 0;}
 			}
 		++dependency_list.first;
@@ -345,7 +350,7 @@ static bool applicationUpToDate(Twins<const Dependency*> dependency_list
 			if(target_rel->typeGet()!=TargetCxx::Type::INCLUDE)
 				{
 				auto target_rel_name_full=dircat(target_dir,target_rel->nameGet());
-				if(FileUtils::newer(target_rel_name_full.c_str(),target_name_full))
+				if(!fileutils.checksumCheck(target_rel_name_full.c_str()))
 					{return 0;}
 				}
 			}
@@ -356,21 +361,22 @@ static bool applicationUpToDate(Twins<const Dependency*> dependency_list
 
 bool TargetCxx::upToDate(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir) const
+	,const char* target_dir
+	,FileUtils& fileutils) const
 	{
 	auto name_full=dircat( target_dir,nameGet() );
 
-	if(FileUtils::newer(sourceNameGet(),name_full.c_str()))
+	if(!fileutils.checksumCheck(sourceNameGet()))
 		{return 0;}
 
 	switch(m_type)
 		{
 		case Type::INCLUDE_LIB:
 			return includeLibUpToDate(dependency_list,dependency_list_full
-				,name_full.c_str(),target_dir);
+				,name_full.c_str(),target_dir,fileutils);
 		case Type::OBJECT:
 			return objectUpToDate(dependency_list,dependency_list_full
-				,name_full.c_str(),target_dir);
+				,name_full.c_str(),target_dir,fileutils);
 		case Type::INCLUDE:
 			return 1;
 
@@ -379,7 +385,7 @@ bool TargetCxx::upToDate(Twins<const Dependency*> dependency_list
 		case Type::APPLICATION:
 			return applicationUpToDate(dependency_list,dependency_list_full
 				,name_full.c_str()
-				,target_dir);
+				,target_dir,fileutils);
 		default:
 			break;
 		}

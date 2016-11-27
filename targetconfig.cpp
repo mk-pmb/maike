@@ -55,19 +55,21 @@ TargetConfig::TargetConfig(const ResourceObject& config,size_t id):
 
 void TargetConfig::compile(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	TimedScope scope(m_compilation_time);
 	auto filename=dircat(target_dir,"maikeconfig.json");
-	FileUtils::echo(m_content.c_str(),filename.c_str());
+	fileutils.echo(m_content.c_str(),filename.c_str());
 	}
 
 bool TargetConfig::upToDate(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir) const
+	,const char* target_dir
+	,FileUtils& fileutils) const
 	{
 	auto filename=dircat(target_dir,"maikeconfig.json");
-	if(!FileUtils::exists(filename.c_str()))
+	if(!fileutils.exists(filename.c_str()))
 		{return 0;}
 	
 	std::string temp;

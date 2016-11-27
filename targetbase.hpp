@@ -75,7 +75,8 @@ namespace Maike
 
 			void compile(Twins<const Dependency*> dependency_list
 				,Twins<const Dependency*> dependency_list_full
-				,const char* target_dir);
+				,const char* target_dir
+				,FileUtils& fileutils);
 
 			double compilationTimeGet() const noexcept
 				{return m_compilation_time;}
@@ -90,7 +91,8 @@ namespace Maike
 		private:
 			virtual void compileImpl(Twins<const Dependency*> dependency_list
 				,Twins<const Dependency*> dependency_list_full
-				,const char* target_dir)=0;
+				,const char* target_dir
+				,FileUtils& fileutils)=0;
 
 			virtual void dumpDetails(ResourceObject& target) const
 				{}

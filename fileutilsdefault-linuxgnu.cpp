@@ -2,14 +2,14 @@
 //@		[
 //@		"and(not(less_than(linux,version('2.6.33'))),gnu)"
 //@			,{
-//@		 	"targets":[{"name":"fileutils.o","type":"object"}]
+//@		 	"targets":[{"name":"fileutilsdefault.o","type":"object"}]
 //@			}
 //@		]
 //@	]
 
 #define _LARGEFILE64_SOURCE
 
-#include "fileutils.hpp"
+#include "fileutilsdefault.hpp"
 #include "errormessage.hpp"
 #include "variant.hpp"
 #include "exceptionhandler.hpp"
@@ -36,6 +36,7 @@
 #include <tuple>
 #include <string>
 #include <regex>
+#include <set>
 
 using namespace Maike;
 
@@ -60,42 +61,11 @@ static WriteBuffer& escape(WriteBuffer& wb,const char* str)
 	return wb;
 	}
 
-bool FileUtils::newer(const char* file_a,const char* file_b)
+void FileUtilsDefault::mkdir(const char* name)
 	{
-	struct stat stat_a;
-	struct stat stat_b;
-
-	auto res_a=stat(file_a, &stat_a);
-	auto errno_a=errno;
-	auto res_b=stat(file_b, &stat_b);
-	auto errno_b=errno;
-
-	if(res_a==-1 && res_b==-1)
-		{
-		exceptionRaise(ErrorMessage("Error: None of the files #0;, and #1; are accessible.\n#0;: #2;.\n#1;: #3;."
-			,{
-			 file_a
-			,file_b
-			,static_cast<const char*>(Maike::strerror(errno_a))
-			,static_cast<const char*>(Maike::strerror(errno_b))
-			}));
-		}
-
-	if(res_a==-1)
-		{return 0;}
-
-	if(res_b==-1)
-		{return 1;}
-
-	return (stat_a.st_mtime > stat_b.st_mtime) && !S_ISDIR(stat_a.st_mode);
-	}
-
-void FileUtils::mkdir(const char* name)
-	{
-	WriteBuffer wb(StdStream::output());
-	wb.write("mkdir ");
-	escape(wb,name);
-	wb.write(static_cast<uint8_t>('\n'));
+	m_wb.write("mkdir ");
+	escape(m_wb,name);
+	m_wb.write(static_cast<uint8_t>('\n'));
 	if( ::mkdir(name, S_IRWXU )==-1 )
 		{
 		exceptionRaise(ErrorMessage("It was not possible to create a directory with name #0;. #1;"
@@ -104,7 +74,7 @@ void FileUtils::mkdir(const char* name)
 	}
 
 
-bool FileUtils::exists(const char* file)
+bool FileUtilsDefault::exists(const char* file) const
 	{
 	if(access(file,F_OK)==-1)
 		{return 0;}
@@ -148,13 +118,23 @@ namespace
 		};
 	}
 
-void FileUtils::copy(const char* source,const char* dest)
+bool FileUtilsDefault::checksumCheck(const char* filename) const
 	{
-	WriteBuffer wb(StdStream::output());
-	wb.write("cp ");
-	escape(wb,source);
-	escape(wb,dest);
-	wb.write(static_cast<uint8_t>('\n'));
+	auto i=m_hashes.find(Stringkey(filename));
+	if(i==m_hashes.end())
+		{return 0;}
+
+	auto hashval=hashlong(FileIn(filename));
+	
+	return memcmp(hashval.begin(),i->second.begin(),hashval.size())==0;
+	}
+
+void FileUtilsDefault::copy(const char* source,const char* dest)
+	{
+	m_wb.write("cp ");
+	escape(m_wb,source);
+	escape(m_wb,dest);
+	m_wb.write(static_cast<uint8_t>('\n'));
 
 	FileDescriptor source_fd(source,O_RDONLY);
 	FileDescriptor dest_fd(dest,O_CREAT|O_WRONLY,S_IRUSR|S_IWUSR);
@@ -181,17 +161,15 @@ void FileUtils::copy(const char* source,const char* dest)
 		}
 	}
 
-void FileUtils::copyFilter(const char* source,const char* dest
+void FileUtilsDefault::copyFilter(const char* source,const char* dest
 	,const char* comment_line_regexp)
 	{
-		{
-		WriteBuffer wb(StdStream::output());
-		wb.write("grep -v '").write(comment_line_regexp).write("' ");
-		escape(wb,source);
-		wb.write(" > ");
-		escape(wb,dest);
-		wb.write("\n");
-		}
+	m_wb.write("grep -v '").write(comment_line_regexp).write("' ");
+	escape(m_wb,source);
+	m_wb.write(" > ");
+	escape(m_wb,dest);
+	m_wb.write("\n");
+
 
 	std::regex comment_line(comment_line_regexp,std::regex_constants::basic);
 
@@ -221,12 +199,18 @@ void FileUtils::copyFilter(const char* source,const char* dest
 		}
 	}
 
-void FileUtils::removeTree(const char* name
-	,const std::set<Stringkey>& keeplist)
+void FileUtilsDefault::removeTree(const char* name
+	,Twins<const char* const*> keeplist)
 	{
-	WriteBuffer wb(StdStream::output());
 	std::stack< std::pair<std::string,bool> > nodes;
 	nodes.push({name,0});
+
+	std::set<Stringkey> keepset;
+	while(keeplist.first!=keeplist.second)
+		{
+		keepset.insert(Stringkey(*keeplist.first));
+		++keeplist.first;
+		}
 
 	while(!nodes.empty())
 		{
@@ -249,9 +233,9 @@ void FileUtils::removeTree(const char* name
 						}
 					else
 						{
-						wb.write("rm ");
-						escape(wb,node.first.c_str());
-						wb.write(static_cast<uint8_t>('\n'));
+						m_wb.write("rm ");
+						escape(m_wb,node.first.c_str());
+						m_wb.write(static_cast<uint8_t>('\n'));
 						}
 					break;
 				case ENOTEMPTY:
@@ -263,7 +247,7 @@ void FileUtils::removeTree(const char* name
 					while((entry=dir.read())!=nullptr)
 						{
 						auto elem=dircat(node.first,entry);
-						if( keeplist.find(Stringkey(elem.c_str()))==keeplist.end() )
+						if( keepset.find(Stringkey(elem.c_str()))==keepset.end() )
 							{nodes.push({elem,0});}
 						}
 					}
@@ -275,14 +259,14 @@ void FileUtils::removeTree(const char* name
 			}
 		else
 			{
-			wb.write("rm -d");
-			escape(wb,node.first.c_str());
-			wb.write(static_cast<uint8_t>('\n'));
+			m_wb.write("rm -d");
+			escape(m_wb,node.first.c_str());
+			m_wb.write(static_cast<uint8_t>('\n'));
 			}
 		}
 	}
 
-void FileUtils::remove(const char* name)
+void FileUtilsDefault::remove(const char* name)
 	{
 	if(rmdir(name)==-1)
 		{
@@ -311,7 +295,7 @@ void FileUtils::remove(const char* name)
 	wb.write(static_cast<uint8_t>('\n'));
 	}
 
-void FileUtils::echo(const char* str,const char* filename)
+void FileUtilsDefault::echo(const char* str,const char* filename)
 	{
 	//	Shell stuff
 		{

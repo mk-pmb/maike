@@ -1,6 +1,6 @@
 //@	{"targets":[{"name":"wand2maike","type":"application"}]}
 
-#include "fileutils.hpp"
+#include "fileutilsdefault.hpp"
 #include "fileinfo.hpp"
 #include "filein.hpp"
 #include "fileout.hpp"
@@ -12,6 +12,7 @@
 #include "twins.hpp"
 #include "errormessage.hpp"
 #include "variant.hpp"
+#include "stdstream.hpp"
 #include <stack>
 #include <vector>
 #include <string>
@@ -263,9 +264,10 @@ int main(int argc,char** argv)
 			return 0;
 			}
 
+		FileUtilsDefault fileutils(StdStream::output());
 		const char* out_dir="__wand2maike";
-		if(!FileUtils::exists(out_dir))
-			{FileUtils::mkdir(out_dir);}
+		if(!fileutils.exists(out_dir))
+			{fileutils.mkdir(out_dir);}
 
 		--argc;
 		++argv;

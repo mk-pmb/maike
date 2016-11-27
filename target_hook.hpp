@@ -15,6 +15,7 @@ namespace Maike
 	class ResourceObject;
 	class ParameterSetDumpable;
 	class DataSink;
+	class FileUtils;
 
 	class PRIVATE Target_Hook
 		{

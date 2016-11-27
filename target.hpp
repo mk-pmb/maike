@@ -17,6 +17,7 @@ namespace Maike
 
 	template<class T>
 	class Handle;
+	class FileUtils;
 
 	class PRIVATE Target
 		{
@@ -24,9 +25,11 @@ namespace Maike
 			typedef Target Base;
 			static void destroy(Target* target) noexcept
 				{target->destroy();}
+
 			virtual void compile(Twins<const Dependency*> dependency_list
 				,Twins<const Dependency*> dependency_list_full
-				,const char* target_dir)=0;
+				,const char* target_dir
+				,FileUtils& fileutils)=0;
 
 			virtual Target& dependencyAdd(Dependency&& dep)=0;
 			virtual Twins<const Dependency*> dependencies() const noexcept=0;
@@ -45,7 +48,8 @@ namespace Maike
 
 			virtual bool upToDate(Twins<const Dependency*> dependency_list
 				,Twins<const Dependency*> dependency_list_full
-				,const char* target_dir) const=0;
+				,const char* target_dir
+				,FileUtils& fileutils) const=0;
 
 			virtual void dump(ResourceObject& target) const=0;
 

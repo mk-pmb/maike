@@ -9,7 +9,8 @@ using namespace Maike;
 
 void TargetDirectory::compileImpl(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	std::string fullpath=target_dir;
 	auto name=nameGet();
@@ -18,12 +19,13 @@ void TargetDirectory::compileImpl(Twins<const Dependency*> dependency_list
 		fullpath+='/';
 		fullpath+=name;
 		}
-	FileUtils::mkdir(fullpath.c_str());
+	fileutils.mkdir(fullpath.c_str());
 	}
 
 bool TargetDirectory::upToDate(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir) const
+	,const char* target_dir
+	,FileUtils& fileutils) const
 	{
 	std::string fullpath=target_dir;
 	auto name=nameGet();
@@ -32,7 +34,7 @@ bool TargetDirectory::upToDate(Twins<const Dependency*> dependency_list
 		fullpath+='/';
 		fullpath+=name;
 		}
-	return FileUtils::exists(fullpath.c_str());
+	return fileutils.exists(fullpath.c_str());
 	}
 
 void TargetDirectory::destroy() noexcept

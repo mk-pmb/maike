@@ -28,11 +28,13 @@ namespace Maike
 
 			void compileImpl(Twins<const Dependency*> dependency_list
 				,Twins<const Dependency*> dependency_list_full
-				,const char* target_dir);
+				,const char* target_dir
+				,FileUtils& fileutils);
 
 			bool upToDate(Twins<const Dependency*> dependency_list
 				,Twins<const Dependency*> dependency_list_full
-				,const char* target_dir) const;
+				,const char* target_dir
+				,FileUtils& fileutils) const;
 
 			void destroy() noexcept;
 

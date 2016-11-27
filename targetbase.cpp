@@ -6,6 +6,7 @@
 #include "resourceobject.hpp"
 #include "timedscope.hpp"
 #include "pathutils.hpp"
+#include "fileutils.hpp"
 #include <cstring>
 #include <limits>
 
@@ -80,8 +81,9 @@ TargetBase& TargetBase::dependencyInverseAdd(Dependency&& dep)
 
 void TargetBase::compile(Twins<const Dependency*> dependency_list
 	,Twins<const Dependency*> dependency_list_full
-	,const char* target_dir)
+	,const char* target_dir
+	,FileUtils& fileutils)
 	{
 	TimedScope scope(m_compilation_time);
-	compileImpl(dependency_list,dependency_list_full,target_dir);
+	compileImpl(dependency_list,dependency_list_full,target_dir,fileutils);
 	}

@@ -9,6 +9,7 @@
 #include "pathutils.hpp"
 #include "targetconfig.hpp"
 #include "resourceobjectjansson.hpp"
+#include "stdstream.hpp"
 #include <cstring>
 
 using namespace Maike;
@@ -17,7 +18,8 @@ Session::Session():
 	 m_target_hooks(m_targetinfo)
 	,m_evaluator(m_targetinfo)
 	,m_spider(m_delegator,m_graph)
-	,m_delegator(m_evaluator)
+	,m_fileutils(StdStream::output())
+	,m_delegator(m_evaluator,m_fileutils)
 	,m_graph(m_delegator),m_dirty_flags(0)
 	{
 	configClear();

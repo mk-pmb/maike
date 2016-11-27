@@ -54,6 +54,7 @@ namespace Maike
 			size_t targetsCountGet() const;
 
 			bool loaderHas(const char* filename) const;
+			FileUtilsDefault& fileutilsGet();
 
 
 		private:
@@ -72,6 +73,7 @@ namespace Maike
 
 			static constexpr unsigned int GRAPH_DIRTY=1;
 			static constexpr unsigned int TARGET_HOOKS_DIRTY=2;
+			static constexpr unsigned int FILEUTILS_DIRTY=4;
 
 			inline bool graphDirty() const noexcept
 				{return m_dirty_flags&GRAPH_DIRTY;}
@@ -86,6 +88,13 @@ namespace Maike
 				{m_dirty_flags|=TARGET_HOOKS_DIRTY;}
 			inline void targetHooksDirtyClear() const noexcept
 				{m_dirty_flags&=~TARGET_HOOKS_DIRTY;}
+
+			inline bool fileutilsDirty() const noexcept
+				{return m_dirty_flags&FILEUTILS_DIRTY;}
+			inline void fileutilsDirtySet() const noexcept
+				{m_dirty_flags|=FILEUTILS_DIRTY;}
+			inline void fileutilsDirtyClear() const noexcept
+				{m_dirty_flags&=~FILEUTILS_DIRTY;}
 
 			void targetHooksRegister() const;
 			void dependenciesReload() const;

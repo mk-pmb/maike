@@ -59,6 +59,16 @@ Session& Session::sysvarsLoad()
 	return *this;
 	}
 
+FileUtilsDefault& Session::fileutilsGet()
+	{
+	if(fileutilsDirty())
+		{
+		m_fileutils.hashesLoad( dircat(m_target_dir_full,"__maike_hashes.dat").c_str() );
+		fileutilsDirtyClear();
+		}
+	return m_fileutils;
+	}
+
 Session& Session::configAppend(const ResourceObject& maikeconfig)
 	{
 	if(maikeconfig.objectExists("source_files"))
@@ -91,18 +101,25 @@ Session& Session::configAppend(const ResourceObject& maikeconfig)
 
 	graphDirtySet();
 	targetHooksDirtySet();
+	fileutilsDirtySet();
 	return *this;
 	}
 
 Session& Session::hookRegister(const char* name_plugin,Twins<const char* const*> filename_exts)
 	{
 	m_target_hooks.hookRegister(name_plugin,filename_exts);
+	graphDirtySet();
+	targetHooksDirtySet();
+	fileutilsDirtySet();
 	return *this;
 	}
 
 Session& Session::hookConfigAppend(const char* name,const ResourceObject& config)
 	{
 	m_target_hooks.hookConfigAppend(name,config);
+	graphDirtySet();
+	targetHooksDirtySet();
+	fileutilsDirtySet();
 	return *this;
 	}
 
@@ -146,6 +163,7 @@ Session& Session::rootSet(const char* root)
 	m_target_dir_full=dircat(root
 		,static_cast<const char*>(m_targetinfo.variableGet(Stringkey("target_directory"))));
 	graphDirtySet();
+	fileutilsDirtySet();
 	return *this;
 	}
 
@@ -169,6 +187,7 @@ Session& Session::sourceFileAppend(const char* filename)
 	{
 	m_source_files.insert(filename);
 	graphDirtySet();
+	fileutilsDirtySet();
 	return *this;
 	}
 

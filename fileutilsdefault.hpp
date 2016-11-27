@@ -28,6 +28,7 @@ namespace Maike
 			void removeTree(const char* name,Twins<const char* const*> keeplist);
 			void echo(const char* str,const char* filename);
 			void checksumCompute(const char* filename);
+			void hashesLoad(const char* hashfile);
 
 		private:
 			std::map< Stringkey,std::array<uint8_t,32> > m_hashes;

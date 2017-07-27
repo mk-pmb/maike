@@ -20,11 +20,7 @@ void SystemTargetInfo::clear()
 	{
 	m_sysvars.clear();
 	m_strings.clear();
-		{
-		Stringkey key("target_directory");
-		replace(m_sysvars,{key,"__targets"});
-		m_varnames[key]=std::string("target_directory");
-		}
+	configAppendDefault();
 	}
 
 SystemTargetInfo& SystemTargetInfo::sysvarsLoad()
@@ -38,6 +34,10 @@ SystemTargetInfo& SystemTargetInfo::configAppendDefault()
 	Stringkey key("target_directory");
 	replace(m_sysvars,{key,"__targets"});
 	m_varnames[key]=std::string("target_directory");
+
+	key=Stringkey("platform");
+	replace(m_sysvars,{key,"generic"});
+	m_varnames[key]=std::string("platform");
 	return *this;
 	}
 
